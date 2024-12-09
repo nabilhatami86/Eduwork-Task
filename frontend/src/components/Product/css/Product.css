@@ -1,0 +1,67 @@
+.card.custom-card {
+    height: 100%;
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-img-top.custom-img {
+    height: 200px; 
+    object-fit: cover; 
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.tag-pill {
+    padding: 0.25rem 0.75rem; 
+    border-radius: 50px; 
+    font-size: 0.9rem; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    background-color: transparent; 
+    border: 2px solid #28a745;
+    color: #4e7657; 
+    transition: all 0.3s ease-in-out; 
+    cursor: pointer;
+}
+
+.tag-pill:hover {
+    background-color: rgba(40, 167, 69, 0.1); 
+    color: #2a6c3a; 
+    border-color: #4e7657; 
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.3); 
+}
+/* Style untuk Dropdown */
+.dropdown {
+    margin: 0 10px;
+  }
+  
+  .dropdown-toggle {
+    background-color: #166e2b;
+    color: white;
+    border: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  .dropdown-toggle:hover {
+    background-color: #166e2b;
+  }
+  
+  .dropdown-item {
+    font-size: 14px;
+    padding: 8px 15px;
+    transition: background-color 0.2s ease;
+  }
+  
+  .dropdown-item:hover,
+  .dropdown-item.active {
+    background-color: #166e2b;
+    color: #000;
+  }
+  

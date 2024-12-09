@@ -1,0 +1,29 @@
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 80px; 
+    align-items: center; 
+    padding: 0 20px;
+}
+
+
+.form-control {
+    border-radius: 25px;
+}
+
+button {
+    border-radius: 5px;
+}
+
+button.btn-success {
+    border-radius: 25px;
+}
+
+.navbar-brand img {
+    width: auto; 
+    height: 200px; 
+    object-fit: contain; 
+}  
+
+
+
+
