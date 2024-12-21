@@ -92,3 +92,32 @@
     border-radius: 8px;
   }
   
+  .empty-cart-container {
+    margin-top: 50px;
+    text-align: center;
+  }
+  
+  .empty-cart-container h2 {
+    font-size: 1.8rem;
+    color: #333;
+  }
+  
+  .empty-cart-container p {
+    font-size: 1rem;
+    color: #777;
+  }
+  
+  .empty-cart-container .btn {
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    border-radius: 30px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .empty-cart-container .btn:hover {
+    background-color: #218838; 
+  }
+  

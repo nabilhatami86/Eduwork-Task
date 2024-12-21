@@ -4,42 +4,9 @@ import axios from "axios";
 const BASE_URL = "http://localhost:5000/api/carts";
 const token = localStorage.getItem("token");
 
-// Action untuk menambahkan item ke keranjang
-export const addToCart = createAsyncThunk(
-    'cart/addToCart',
-    async (product, { getState, rejectWithValue }) => {
-        try {
-            const state = getState();
-            const currentCart = state.cart.items;
-            console.log("Current Cart:", currentCart);
-
-            const existingProduct = currentCart.find(
-                (item) => item.product._id === product._id
-            );
-
-            const updateQty = existingProduct
-                ? existingProduct.qty + product.qty
-                : product.qty;
-            console.log("Updated quantity:", updateQty);
-
-            const response = await axios.put(
-                BASE_URL,
-                {
-                    items: [{ product_id: product._id, qty: updateQty }],
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    });
-
-// Action untuk mendapatkan item dari keranjang
+// Thunk untuk mendapatkan data cart
 export const getCartItems = createAsyncThunk(
-    'cart/getCartItems',
+    "cart/getCartItems",
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get(BASE_URL, {
@@ -49,55 +16,15 @@ export const getCartItems = createAsyncThunk(
         } catch (error) {
             return rejectWithValue(error.message);
         }
-    });
-
-export const incrementQty = createAsyncThunk(
-    'cart/incrementQty',
-    async ({ product_id, qty }, { rejectWithValue }) => {
-        try {
-            const response = await axios.put(
-                BASE_URL,
-                {
-                    items: [{ product_id, qty: qty + 1 }]
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
     }
 );
 
-export const decrementQty = createAsyncThunk(
-    'cart/decrementQty',
-    async ({ product_id, qty }, { rejectWithValue }) => {
-        try {
-            const response = await axios.put(
-                BASE_URL,
-                {
-                    items: [{ product_id, qty: qty - 1 }]
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
-);
-
-
-
+// Thunk untuk menghapus item dari cart
 export const deleteCart = createAsyncThunk(
     "cart/deleteCart",
-    async (id, { rejectWithValue, dispatch }) => {
+    async (id, { rejectWithValue }) => {
         try {
-            if (!id) throw new Error('Invalid ID');
+            if (!id) throw new Error("Invalid ID");
             await axios.delete(`${BASE_URL}/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -105,20 +32,50 @@ export const deleteCart = createAsyncThunk(
         } catch (error) {
             return rejectWithValue(error.message);
         }
-    });
-
-
-
-
+    }
+);
 
 const cartSlice = createSlice({
     name: "cart",
     initialState: {
         items: [],
+        product: [],
         qty: 0,
+        buyProduct: null,
         error: null,
     },
-    reducers: {},
+    reducers: {
+        selectProduct: (state, action) => {
+            const selectedProduct = action.payload;
+            const productExists = state.product.some(
+                (item) => item._id === selectedProduct._id
+            );
+
+            if (!productExists) {
+                state.product.push(selectedProduct);
+            }
+        },
+
+        deselectProduct: (state, action) => {
+            const productId = action.payload;
+            state.product = state.product.filter((item) => item._id !== productId);
+        },
+
+        clearSelectedProducts: (state) => {
+            state.product = [];
+        },
+
+        buyNow: (state, action) => {
+            const buyProductNow = action.payload;
+            console.log("Product received in buyNow action:", buyProductNow);
+            state.buyProduct = buyProductNow;
+        },
+
+        clearBuyNow: (state) => {
+            state.buyProduct = null;
+        }
+    },
+
     extraReducers: (builder) => {
         builder
             .addCase(getCartItems.fulfilled, (state, action) => {
@@ -127,58 +84,18 @@ const cartSlice = createSlice({
             .addCase(getCartItems.rejected, (state, action) => {
                 state.error = action.payload;
             })
-            .addCase(addToCart.fulfilled, (state, action) => {
-                console.log("Cart updated successfully:", action.payload);
-                state.items = action.payload;
-
-
-            })
-            .addCase(addToCart.rejected, (state, action) => {
-                console.error("Failed to add product to cart:", action.payload);
-                state.error = action.payload;
-            })
-            .addCase(incrementQty.fulfilled, (state, action) => {
-                const { product_id, qty } = action.payload;
-                const existingItem = state.items.find((item) => item.product === product_id);
-
-                if (existingItem) {
-                    existingItem.qty = qty;
-                }
-            })
-            .addCase(incrementQty.rejected, (state, action) => {
-                state.error = action.payload;
-            })
-            .addCase(decrementQty.fulfilled, (state, action) => {
-                const { product_id, qty } = action.payload;
-                const existingItem = state.items.find((item) => item.product === product_id);
-
-                if (existingItem) {
-                    if (existingItem <= 0) {
-                        state.items = state.items.filter((item) => item.product !== product_id);
-                    } else {
-                        existingItem.qty = qty;
-                    }
-                }
-            })
-            .addCase(decrementQty.rejected, (state, action) => {
-                state.error = action.payload;
-            })
             .addCase(deleteCart.fulfilled, (state, action) => {
                 state.items = state.items.filter((item) => item.id !== action.payload);
             })
             .addCase(deleteCart.rejected, (state, action) => {
                 state.error = action.payload;
             });
-
     },
 });
 
-export const {
-    clearCart,
-    increase,
-    decrease,
-    calculateTotals,
-    removeItem,
-} = cartSlice.actions;
+export const { selectProduct, deselectProduct, clearSelectedProducts, buyNow, clearBuyNow } = cartSlice.actions
+export const selectProducts = (state) => state.cart.items.map((item) => item);
+
+
 
 export default cartSlice.reducer;

@@ -20,7 +20,7 @@ const Address = () => {
   const userId = localStorage.getItem("userId");
 
   if (!token || !userId) {
-    window.location.href = "/login"; // Redirect if no token or userId
+    window.location.href = "/login";
   }
 
   const axiosInstance = axios.create({

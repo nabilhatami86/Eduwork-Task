@@ -57,13 +57,8 @@ const NavbarComponent = ({ onSearchChange }) => {
               <>
                 <Link to="/cart" className="me-3 position-relative">
                   <TiShoppingCart size={30} className="text-dark" />
-                  {/* Menambahkan badge untuk menampilkan jumlah item di keranjang */}
                   {cartItemCount > 0 && (
-                    <Badge
-                      pill
-                      bg="danger"
-                      className="position-absolute top-0 start-100 translate-middle"
-                    >
+                    <Badge className="cart-badge" pill>
                       {cartItemCount}
                     </Badge>
                   )}

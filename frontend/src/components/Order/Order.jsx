@@ -2,24 +2,20 @@ import { useEffect, useState } from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import axios from "axios";
 import "./css/Order.css";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const Order = () => {
   const [dataCourier, setDataCourier] = useState([]);
   const [dataAddress, setDataAddress] = useState([]);
-  const [dataCart, setDataCart] = useState([]);
   const [selectedCourier, setSelectedCourier] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const navigate = useNavigate();
-  const location = useLocation();
-  const { selectedProducts } = location.state || { selectedProducts: [] };
+  const { product, buyProduct } = useSelector((state) => state.cart); // Mengambil buyProduct dari Redux
   const token = localStorage.getItem("token");
 
-  console.log("Selected Products in Order:", selectedProducts);
-
-  // Ambil data kurir
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/courier")
@@ -31,7 +27,6 @@ const Order = () => {
       });
   }, []);
 
-  // Ambil data alamat pengiriman
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/deliveryaddresses", {
@@ -45,81 +40,122 @@ const Order = () => {
       });
   }, [token]);
 
-  useEffect(() => {
-    if (!selectedProducts || !selectedProducts.length) {
-      alert("Data produk tidak ditemukan.");
-      return navigate("/cart");
-    }
-    console.log("Selected Products:", selectedProducts);
-  }, [selectedProducts]);
-
-  // Ambil data cart/keranjang belanja
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/carts", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        setDataCart(response.data.cart);
-      })
-      .catch((error) => {
-        console.error("Cart data error:", error);
-      });
-  }, [token]);
-
   const handleSubmit = async () => {
-    if (!selectedAddress || !selectedCourier) {
-      alert("Pilih alamat dan kurir terlebih dahulu.");
-      return;
-    }
-
-    const orderData = {
-      delivery_address: selectedAddress._id,
-      delivery_fee: selectedCourier.delivery_fee,
-    };
-
     try {
+      let data = [];
+
+      if (product.length > 0) {
+        product.forEach((item) => {
+          data.push({
+            product: item.product._id,
+            qty: item.qty,
+            cart: item._id,
+          });
+        });
+      } else if (buyProduct) {
+        data.push({
+          product: buyProduct._id,
+          qty: 1,
+          cart: null,
+        });
+      }
+
+      const payload = {
+        items: data,
+        delivery_fee: selectedCourier.delivery_fee,
+        delivery_address: selectedAddress._id,
+      };
+
       const response = await axios.post(
         "http://localhost:5000/api/order",
-        orderData,
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      if (response.status === 200) {
-        const order = response.data;
-        setModalMessage("Order berhasil! Terima kasih atas pembelian Anda.");
-        setShowModal(true);
-        setTimeout(() => navigate(`/invoice/${order._id}`), 2000);
+
+      const order = response.data.order; // Ambil objek `order` dari respons
+      console.log("Order Response:", order);
+
+      if (!order || !order.id) {
+        throw new Error("Order ID tidak ditemukan dalam respons API.");
       }
+
+      // Hitung total harga
+      const totalHarga = calculateTotalBelanja();
+
+      let userAmount;
+      while (true) {
+        // Minta pengguna memasukkan jumlah pembayaran
+        const input = prompt(
+          `Masukkan jumlah pembayaran untuk Order ID: ${
+            order.id
+          } \nTotal Harga: Rp${totalHarga.toLocaleString()}`,
+          ""
+        );
+
+        // Validasi input sebagai angka
+        if (input && !isNaN(input) && parseFloat(input) === totalHarga) {
+          userAmount = parseFloat(input);
+          break;
+        }
+
+        alert(
+          `Jumlah pembayaran tidak valid. Pastikan sesuai dengan total harga: Rp${totalHarga.toLocaleString()}.`
+        );
+      }
+
+      // Kirim data pembayaran ke server
+      const paymentPayload = {
+        order: order.id,
+        amount: userAmount,
+      };
+
+      const paymentResponse = await axios.post(
+        "http://localhost:5000/api/invoices",
+        paymentPayload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log("Payment Response:", paymentResponse.data);
+
+      alert(
+        `Pembayaran berhasil! \nOrder ID: ${order} \nAmount: Rp${userAmount.toLocaleString()}`
+      );
+
+      setModalMessage("Pesanan dan pembayaran berhasil diproses.");
+      setShowModal(true);
+      window.location.href = `/invoice/${order.id}`;
     } catch (error) {
-      console.error("Order error:", error);
-      setModalMessage("Terjadi kesalahan saat memproses pesanan.");
+      console.error("Error:", error);
+      setModalMessage(
+        "Terjadi kesalahan saat memproses pesanan atau pembayaran."
+      );
       setShowModal(true);
     }
   };
 
   const calculateTotalHarga = () => {
-    const totalHarga = selectedProducts.reduce(
-      (total, item) => total + item.product.price * item.qty,
-      0
-    );
-    return totalHarga;
+    if (product.length > 0) {
+      return product.reduce(
+        (total, item) => total + item.product.price * item.qty,
+        0
+      );
+    } else if (buyProduct) {
+      return buyProduct.price * 1;
+    } else {
+      return 0;
+    }
   };
 
   const calculateOngkir = () => {
-    if (selectedCourier) {
-      return selectedCourier.delivery_fee;
-    }
-    return 0;
+    return selectedCourier ? selectedCourier.delivery_fee : 0;
   };
 
   const calculateTotalBelanja = () => {
-    const totalHarga = calculateTotalHarga();
-    const ongkir = calculateOngkir();
-    const totalBelanja = totalHarga + ongkir;
-
-    return totalBelanja;
+    return calculateTotalHarga() + calculateOngkir();
   };
 
   const handleAddressSelect = (addressId) => {
@@ -131,20 +167,18 @@ const Order = () => {
     <div className="container mt-4">
       <h3 className="text-center mb-4">PENGIRIMAN</h3>
 
-      {/* Bagian Pengiriman */}
       <div className="row">
+        {/* Alamat Pengiriman */}
         <div className="col-md-8">
           <div className="card mb-3">
             <div className="card-header bg-primary">
               <h5 className="mb-0 text-dark">Alamat Pengiriman</h5>
             </div>
             <div className="card-body">
-              {/* Dropdown untuk memilih alamat */}
               <Dropdown>
                 <Dropdown.Toggle variant="info" id="dropdown-basic">
                   {selectedAddress ? selectedAddress.name : "Pilih Alamat"}
                 </Dropdown.Toggle>
-
                 <Dropdown.Menu>
                   {dataAddress.length > 0 ? (
                     dataAddress.map((address) => (
@@ -162,20 +196,12 @@ const Order = () => {
                   )}
                 </Dropdown.Menu>
               </Dropdown>
-
-              {/* Menampilkan alamat yang dipilih */}
               {selectedAddress && (
                 <div className="mt-3 p-4 border rounded-3 bg-light shadow-sm">
                   <p className="fw-bold fs-5">{selectedAddress.name}</p>
                   <p className="mb-1">
-                    <span className="text-muted">Provinsi:</span>{" "}
-                    {selectedAddress.provinsi},{" "}
-                    <span className="text-muted">Kabupaten:</span>{" "}
-                    {selectedAddress.kabupaten},{" "}
-                    <span className="text-muted">Kecamatan:</span>{" "}
-                    {selectedAddress.kecamatan},{" "}
-                    <span className="text-muted">Kelurahan:</span>{" "}
-                    {selectedAddress.kelurahan}
+                    {selectedAddress.provinsi}, {selectedAddress.kabupaten},
+                    {selectedAddress.kecamatan}, {selectedAddress.kelurahan}
                   </p>
                   <p className="text-muted">{selectedAddress.detail}</p>
                 </div>
@@ -183,95 +209,98 @@ const Order = () => {
             </div>
           </div>
 
-          {/* Bagian Produk */}
-          {selectedProducts.length > 0 ? (
-            <div className="card mb-3">
-              <div className="card-body">
-                <div className="d-flex flex-wrap">
-                  {selectedProducts.map(
-                    (item) =>
-                      item?.product && (
-                        <div
-                          key={item.product._id}
-                          className="d-flex align-items-center mb-3 w-100"
-                        >
-                          <img
-                            src={item.product.image_url || "/placeholder.png"}
-                            alt={item.product.name || "Produk"}
-                            className="img-thumbnail rounded"
-                            style={{ width: "100px", height: "100px" }}
-                          />
-                          <div className="ms-3">
-                            <h6 className="mb-1">{item.product.name}</h6>
-                          </div>
-                          <div className="ms-auto text-end">
-                            <p>
-                              {item.qty} x Rp
-                              {item.product.price.toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                      )
-                  )}
-                </div>
-
-                {/* Pilih Kurir (Dropdown hanya muncul sekali) */}
-                <div className="mt-3 text-end ">
-                  <Dropdown>
-                    <Dropdown.Toggle variant="info" id="dropdown-kurir">
-                      {selectedCourier
-                        ? `${selectedCourier.name} - Rp${selectedCourier.delivery_fee}`
-                        : "Pilih Kurir"}
-                    </Dropdown.Toggle>
-
-                    <Dropdown.Menu>
-                      {dataCourier.length > 0 ? (
-                        dataCourier.map((courier) => (
-                          <Dropdown.Item
-                            key={courier.id}
-                            onClick={() => setSelectedCourier(courier)} // Pilih kurir
-                          >
-                            {courier.name} - Rp{courier.delivery_fee}
-                          </Dropdown.Item>
-                        ))
-                      ) : (
-                        <Dropdown.Item disabled>Loading...</Dropdown.Item>
-                      )}
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </div>
+          {/* Product List */}
+          <div className="card mb-3">
+            <div className="card-body">
+              <div className="d-flex flex-wrap">
+                {product.length > 0 ? (
+                  product.map((productItem) => (
+                    <div
+                      key={productItem._id}
+                      className="d-flex align-items-center mb-3 w-100"
+                    >
+                      <img
+                        src={
+                          productItem.product.image_url || "/placeholder.png"
+                        }
+                        alt={productItem.product.name || "Produk"}
+                        className="img-thumbnail rounded"
+                        style={{ width: "100px", height: "100px" }}
+                      />
+                      <div className="ms-3">
+                        <h6 className="mb-1">{productItem.product.name}</h6>
+                        <p>Qty: {productItem.qty || 1}</p>
+                      </div>
+                      <div className="ms-auto text-end">
+                        <p>Rp{productItem.product.price.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="d-flex align-items-center mb-3 w-100">
+                    {/* Menampilkan informasi product buyProduct */}
+                    <img
+                      src={buyProduct?.image_url || "/placeholder.png"}
+                      alt={buyProduct?.name || "Produk"}
+                      className="img-thumbnail rounded"
+                      style={{ width: "100px", height: "100px" }}
+                    />
+                    <div className="ms-3">
+                      <h6 className="mb-1">{buyProduct?.name || "Produk"}</h6>
+                      <p>Qty: {buyProduct?.qty || 1}</p>
+                    </div>
+                    <div className="ms-auto text-end">
+                      <p>Rp{buyProduct?.price?.toLocaleString() || "0"}</p>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Courier Dropdown */}
+              <Dropdown className="mt-3">
+                <Dropdown.Toggle variant="info" id="dropdown-kurir">
+                  {selectedCourier
+                    ? `${selectedCourier.name} - Rp${selectedCourier.delivery_fee}`
+                    : "Pilih Kurir"}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {dataCourier.map((courier) => (
+                    <Dropdown.Item
+                      key={courier.id}
+                      onClick={() => setSelectedCourier(courier)}
+                    >
+                      {courier.name} - Rp{courier.delivery_fee}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
             </div>
-          ) : (
-            <p>Keranjang kosong.</p>
-          )}
+          </div>
         </div>
 
-        {/* Ringkasan Belanja */}
+        {/* Summary */}
         <div className="col-md-4">
           <div className="card shadow-sm">
             <div className="card-header bg-success text-dark">
               <h5 className="mb-0">Ringkasan Belanja</h5>
             </div>
             <div className="card-body">
-              {/* Total Harga Produk */}
               <p className="d-flex justify-content-between">
-                <span>Total Harga ({selectedProducts.length} Barang)</span>
+                <span>
+                  Total Harga (
+                  {product.length > 0 ? product.length : buyProduct ? 1 : 0}{" "}
+                  Barang)
+                </span>
                 <span>Rp{calculateTotalHarga().toLocaleString()}</span>
               </p>
-
-              {/* Ongkir */}
               <p className="d-flex justify-content-between">
                 <span>Ongkir</span>
                 <span>Rp{calculateOngkir().toLocaleString()}</span>
               </p>
-
-              {/* Total Belanja */}
               <p className="d-flex justify-content-between">
                 <span>Total Belanja</span>
                 <span>Rp{calculateTotalBelanja().toLocaleString()}</span>
               </p>
-
               <button className="btn btn-success w-100" onClick={handleSubmit}>
                 Beli
               </button>
@@ -280,7 +309,6 @@ const Order = () => {
         </div>
       </div>
 
-      {/* Modal Popup */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">

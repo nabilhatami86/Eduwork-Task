@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import Logo from "../../assets/logo.png";
 
 const LogoComponent = () => (
-  <Navbar.Brand as={Link} to="/product" className="me-3">
+  <Navbar.Brand as={Link} to="/" className="me-3">
     <img
       src={Logo}
       alt="logo"

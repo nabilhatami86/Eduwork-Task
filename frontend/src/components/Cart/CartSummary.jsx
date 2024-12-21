@@ -5,6 +5,8 @@ const CartSummary = ({
   selectedItems,
   handleProceedToOrder,
 }) => {
+  console.log("select", selectedItems);
+
   return (
     <div className="card">
       <div className="card-header">
@@ -19,9 +21,10 @@ const CartSummary = ({
             </tr>
           </thead>
           <tbody>
-            {items
-              .filter((item) => selectedItems.includes(item.product._id))
-              .map((item, index) => (
+            {selectedItems.map((item, index) => {
+              console.log("itemselc", item);
+
+              return (
                 <tr key={item.product._id || index}>
                   <td>
                     <div className="d-flex align-items-center">
@@ -40,7 +43,8 @@ const CartSummary = ({
                   </td>
                   <td className="text-center">{item.qty || 0}</td>
                 </tr>
-              ))}
+              );
+            })}
           </tbody>
         </table>
         {items.some((item) => selectedItems.includes(item.product._id)) ? (
@@ -52,8 +56,7 @@ const CartSummary = ({
         )}
         <button
           className="btn btn-success w-100"
-          onClick={() => handleProceedToOrder(selectedItems)}
-          disabled={!isCheckoutEnabled || selectedItems.length === 0}
+          onClick={handleProceedToOrder}
         >
           Beli
         </button>

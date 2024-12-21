@@ -1,13 +1,16 @@
 import React from "react";
 import { Dropdown, Card, Button } from "react-bootstrap";
 import { CgProfile } from "react-icons/cg";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 
 const UserProfileComponent = ({ userData, onLogout }) => {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   const handleNavigateToAddress = () => {
-    navigate("/address"); // Navigate to the /address page
+    navigate("/address");
+  };
+  const handleNavigateToHistory = () => {
+    navigate("/history");
   };
 
   return (
@@ -33,10 +36,19 @@ const UserProfileComponent = ({ userData, onLogout }) => {
             <div className="mb-3">
               <p
                 className="text-dark cursor-pointer fw-semibold"
-                onClick={handleNavigateToAddress} // Call navigate function
+                onClick={handleNavigateToAddress}
                 style={{ cursor: "pointer" }}
               >
                 Add Address
+              </p>
+            </div>
+            <div className="mb-3">
+              <p
+                className="text-dark cursor-pointer fw-semibold"
+                onClick={handleNavigateToHistory}
+                style={{ cursor: "pointer" }}
+              >
+                Invoice History
               </p>
             </div>
             <Button variant="danger" className="w-100" onClick={onLogout}>

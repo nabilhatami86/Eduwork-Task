@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col, Card, Button, Table } from "react-bootstrap";
 import { FaFileInvoiceDollar, FaTruck } from "react-icons/fa";
-import { FaTruckFast } from "react-icons/fa6";
 import "./css/Invoice.css";
 
 const Invoice = () => {
@@ -29,7 +28,6 @@ const Invoice = () => {
           }
         );
         console.log(response.data);
-
         setInvoice(response.data);
       } catch (error) {
         console.error("Error fetching invoice:", error);
@@ -42,16 +40,18 @@ const Invoice = () => {
   }, [order_id, token]);
 
   const generateInvoiceNumber = () => {
-    if (!invoice || !invoice._id) return null;
+    if (!invoice.invoice || !invoice.invoice._id) return null; // Cek apakah invoice sudah ada dan memiliki ID
     const date = new Date();
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const randomNumber = Math.floor(Math.random() * 10000);
 
-    return `INV/${year}/${month}/${randomNumber}/${invoice._id}`;
+    // Menggunakan invoice._id untuk ID invoice
+    return `INV/${year}/${month}/${randomNumber}/${invoice.invoice._id}`;
   };
 
   const invoiceNumber = generateInvoiceNumber();
+  console.log(invoiceNumber);
 
   if (loading) {
     return (
@@ -81,11 +81,14 @@ const Invoice = () => {
           <Row>
             <Col md={6}>
               <h5>Pembeli:</h5>
-              <p>{invoice.user.full_name || "Nama pembeli tidak tersedia"}</p>
+              <p>
+                {invoice.invoice.user.full_name ||
+                  "Nama pembeli tidak tersedia"}
+              </p>
             </Col>
             <Col md={6}>
               <h5>Status Pembayaran:</h5>
-              <p>{invoice.payment_status}</p>
+              <p>{invoice.invoice.order.status}</p>
             </Col>
           </Row>
 
@@ -104,8 +107,12 @@ const Invoice = () => {
             <Col md={12}>
               <h5>Alamat Pengiriman:</h5>
               <p>
-                {invoice.delivery_address
-                  ? ` ${invoice.delivery_address.provinsi}, ${invoice.delivery_address.kabupaten}, ${invoice.delivery_address.kecamatan}, ${invoice.delivery_address.kelurahan}, ${invoice.delivery_address.detail}`
+                {invoice.invoice.order.delivery_address
+                  ? ` ${invoice.invoice.order.delivery_address.detail},
+                  ${invoice.invoice.order.delivery_address.kelurahan},
+                  ${invoice.invoice.order.delivery_address.kecamatan}, 
+                  ${invoice.invoice.order.delivery_address.kabupaten}, 
+                  ${invoice.invoice.order.delivery_address.provinsi}`
                   : "Alamat pengiriman tidak tersedia"}
               </p>
             </Col>
@@ -121,31 +128,24 @@ const Invoice = () => {
               </tr>
             </thead>
             <tbody>
-              {invoice.order && invoice.order.order_items ? (
-                invoice.order.order_items.map((item, index) => {
-                  const itemSubtotal = item.qty * item.product?.price;
-                  return (
-                    <tr key={index}>
-                      <td>{item.name}</td>
-                      <td>{item.qty}</td>
-                      <td>Rp {item.price?.toLocaleString()}</td>
-                      <td>Rp {itemSubtotal.toLocaleString() || 0}</td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="4" className="text-center">
-                    Tidak ada produk yang ditemukan dalam order ini.
-                  </td>
-                </tr>
-              )}
+              {invoice.orderItems.map((item) => {
+                const subtotal = item.price * item.qty;
+                return (
+                  <tr key={item._id}>
+                    <td>{item.product.name || "Nama produk tidak tersedia"}</td>
+                    <td>{item.qty}</td>
+                    <td>Rp {item.product.price.toLocaleString()}</td>
+                    <td>Rp {subtotal.toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+
               <tr>
                 <td colSpan="3" className="text-start">
                   <strong>Total Harga:</strong>
                 </td>
                 <td>
-                  <strong>Rp {invoice.sub_total?.toLocaleString() || 0}</strong>
+                  <strong>Rp{invoice.invoice.orderItems} </strong>
                 </td>
               </tr>
               <tr>
@@ -153,17 +153,15 @@ const Invoice = () => {
                   <strong>Ongkir:</strong>
                 </td>
                 <td>
-                  <strong>
-                    Rp {invoice.delivery_fee?.toLocaleString() || 0}
-                  </strong>
+                  <strong>Rp{invoice.invoice.order.delivery_fee}</strong>
                 </td>
               </tr>
               <tr>
                 <td colSpan="3" className="text-start">
-                  <strong>Total Tagihan:</strong>
+                  <strong>Total:</strong>
                 </td>
                 <td>
-                  <strong>Rp {invoice.total?.toLocaleString() || 0}</strong>
+                  <strong>Rp {invoice.invoice.order.total}</strong>
                 </td>
               </tr>
             </tbody>

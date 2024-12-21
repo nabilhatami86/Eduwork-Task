@@ -2,31 +2,33 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getCartItems,
-  incrementQty,
-  decrementQty,
   deleteCart,
+  selectProduct,
+  deselectProduct,
+  clearBuyNow,
 } from "../../redux/cartSlice";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
 import "./css/cart.css";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { FaShoppingCart } from "react-icons/fa";
 
 const Cart = () => {
   const dispatch = useDispatch();
   const token = localStorage.getItem("token");
-  const [selectedItems, setSelectedItems] = useState([]);
   const navigate = useNavigate();
 
-  const { items } = useSelector((state) => state.cart);
+  const { items, product } = useSelector((state) => state.cart);
+  console.log("Selected products", product);
 
   useEffect(() => {
     if (token) {
-      console.log("Dispatching getCartItems action...");
       dispatch(getCartItems());
     } else {
-      console.error("Token is not available");
+      console.error("Token tidak tersedia");
     }
-  }, [token, dispatch]);
+  }, [token]);
 
   const handleDelete = (id) => {
     dispatch(deleteCart(id)).then(() => {
@@ -34,66 +36,96 @@ const Cart = () => {
     });
   };
 
-  const handleIncrement = async (product_id, currentQty) => {
-    const newQty = currentQty;
+  const handleIncrement = async (product_id) => {
     try {
-      await dispatch(incrementQty({ product_id, qty: newQty })).unwrap();
+      await axios.put(
+        "http://localhost:5000/api/carts",
+        {
+          product_id: product_id,
+          plus: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       dispatch(getCartItems());
     } catch (error) {
-      console.error("Error incrementing quantity:", error);
+      console.error("Terjadi kesalahan saat menambah jumlah:", error);
     }
   };
 
-  const handleDecrement = (product_id, currentQty) => {
-    const item = items.find((i) => i.product._id === product_id);
-    const cart_id = item ? item._id : undefined;
+  const handleDecrement = async (product_id) => {
+    try {
+      await axios.put(
+        "http://localhost:5000/api/carts",
+        {
+          product_id: product_id,
+          min: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      dispatch(getCartItems());
+    } catch (error) {
+      console.error("Terjadi kesalahan saat mengurangi jumlah:", error);
+    }
+  };
 
-    if (currentQty > 1) {
-      dispatch(decrementQty({ product_id, qty: currentQty }))
-        .then(() => {
-          dispatch(getCartItems());
+  const handleSelectItem = (item) => {
+    const isSelected = product.some(
+      (selectedItem) => selectedItem._id === item._id
+    );
+
+    if (isSelected) {
+      dispatch(deselectProduct(item._id));
+    } else {
+      dispatch(
+        selectProduct({
+          product: item.product,
+          qty: item.qty,
+          _id: item._id,
         })
-        .catch((error) => {
-          console.error(`Error decrementing product ID: ${product_id}`, error);
-        });
-    } else if (currentQty === 1) {
-      if (cart_id) {
-        handleDelete(cart_id);
-      }
+      );
     }
   };
 
-  const handleSelectItem = (id) => {
-    setSelectedItems((prevSelectedItems) => {
-      const updatedSelectedItems = prevSelectedItems.includes(id)
-        ? prevSelectedItems.filter((itemId) => itemId !== id)
-        : [...prevSelectedItems, id];
-      console.log(updatedSelectedItems);
-      return updatedSelectedItems;
-    });
-  };
-
-  const isCheckoutEnabled = selectedItems.length > 0;
+  const isCheckoutEnabled = product.length > 0;
 
   const calculateSubtotal = () => {
     return items.reduce((total, item) => {
-      if (selectedItems.includes(item.product._id)) {
-        total += item.price * item.qty;
+      if (product.some((selectedItem) => selectedItem._id === item._id)) {
+        total += item.product.price * item.qty;
       }
       return total;
     }, 0);
   };
 
   const handleProceedToOrder = () => {
-    const selectedProducts = items.filter((item) =>
-      selectedItems.includes(item.product._id)
-    );
-    console.log("Navigating with selectedProducts:", selectedProducts);
-    navigate("/order", { state: { selectedProducts } });
+    dispatch(clearBuyNow());
+    navigate("/order");
   };
 
   if (!items || items.length === 0) {
-    return <p>Keranjang kosong</p>;
+    return (
+      <div className="empty-cart-container text-center">
+        <FaShoppingCart size={100} color="#28a745" />
+        <h2 className="mt-3">Keranjang Anda Kosong</h2>
+        <p className="text-muted">
+          Sepertinya keranjang Anda kosong. Ayo mulai belanja!
+        </p>
+        <button
+          className="btn btn-primary mt-3"
+          onClick={() => navigate("/product")}
+        >
+          Lihat Produk
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -105,10 +137,10 @@ const Cart = () => {
             <thead>
               <tr>
                 <th>Check</th>
-                <th>Product</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Action</th>
+                <th>Produk</th>
+                <th>Harga</th>
+                <th>Kuantitas</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -119,8 +151,10 @@ const Cart = () => {
                   onIncrement={handleIncrement}
                   onDecrement={handleDecrement}
                   onDelete={handleDelete}
-                  onSelect={handleSelectItem}
-                  isSelected={selectedItems.includes(item.product._id)}
+                  onSelect={() => handleSelectItem(item)}
+                  isSelected={product.some(
+                    (selectedItem) => selectedItem._id === item._id
+                  )}
                 />
               ))}
             </tbody>
@@ -129,11 +163,11 @@ const Cart = () => {
 
         <div className="col-md-4 mt-4">
           <CartSummary
-            items={items}
+            items={product}
             calculateSubtotal={calculateSubtotal}
             handleProceedToOrder={handleProceedToOrder}
             isCheckoutEnabled={isCheckoutEnabled}
-            selectedItems={selectedItems}
+            selectedItems={product}
           />
         </div>
       </div>

@@ -18,12 +18,11 @@ const createProduct = async (req, res, next) => {
     try {
         const { name, description, price, category, tags } = req.body;
 
-
         let categoryId = null;
         if (category) {
-            console.log("Nama kategori yang diterima:", category); // Debug input kategori
+            console.log("Nama kategori yang diterima:", category);
             let newCategory = await Category.findOne({ name: { $regex: category, $options: 'i' } });
-            console.log("Kategori ditemukan di database:", newCategory); // Debug hasil query
+            console.log("Kategori ditemukan di database:", newCategory);
 
             if (!newCategory) {
                 console.warn("Kategori tidak ditemukan, membuat kategori baru.");
@@ -168,13 +167,13 @@ const updateProduct = async (req, res, next) => {
 
 const getProduct = async (req, res, next) => {
     try {
-        let { q = '', category = '', tag = [], page = 1 } = req.query;
+        let { keyword = '', category = '', tag = [], page = 1 } = req.query;
 
         let criteria = {};
 
-        // Menangani pencarian berdasarkan query `q`
-        if (q.length) {
-            criteria = { ...criteria, name: { $regex: `${q}`, $options: 'i' } };
+        // Menangani pencarian berdasarkan query keyword
+        if (keyword.length) {
+            criteria = { ...criteria, name: { $regex: `${keyword}`, $options: 'i' } };
         }
 
         // Menangani filter berdasarkan kategori

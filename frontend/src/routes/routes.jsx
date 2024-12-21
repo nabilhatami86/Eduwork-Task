@@ -10,6 +10,8 @@ import Cart from "../components/Cart/Cart";
 import Address from "../components/Address/Address";
 import Order from "../components/Order/Order";
 import Invoice from "../components/Order/Invoice";
+import Home from "../pages/Home/Home";
+import TransactionHistory from "../components/TransactionHistory/invoiceHistory";
 
 const RouterAplication = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,6 +24,7 @@ const RouterAplication = () => {
       <NavbarComponent onSearchChange={handleSearchChange} />
 
       <Routes>
+        <Route path="/" element={<Home searchTerm={searchTerm} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/product" element={<Product searchTerm={searchTerm} />} />
@@ -29,6 +32,7 @@ const RouterAplication = () => {
         <Route path="/address" element={<Address />} />
         <Route path="/order" element={<Order />} />
         <Route path="/invoice/:order_id" element={<Invoice />} />
+        <Route path="/history" element={<TransactionHistory />} />
       </Routes>
 
       <FooterComponent />

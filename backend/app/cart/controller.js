@@ -21,36 +21,42 @@ const getCart = async (req, res, next) => {
 
 const updateCart = async (req, res, next) => {
     try {
-        const { items } = req.body;
+        const { product_id, plus, min } = req.body;
+        const dataProduct = await Product.findOne({ _id: product_id })
 
-        const ProductIds = items.map(item => item.product_id);
-        const products = await Product.find({ _id: { $in: ProductIds } });
-        let CartItems = items.map(item => {
-            let relatedProduct = products.find(
-                product => product._id.toString() === item.product_id
-            );
+        if (!dataProduct) {
+            return res.status(400).json({
+                error: 1,
+                message: 'Product not found',
+                fields: {
+                    product_id: { message: 'Product not found' }
+                }
+            })
+        }
 
-            return {
-                product: relatedProduct._id,
-                price: relatedProduct.price,
-                image_url: relatedProduct.image_url,
-                name: relatedProduct.name,
-                user: req.user._id,
-                qty: item.qty
+        console.log(product_id);
+
+        const dataCart = await CartItem.findOne({ product: product_id, user: req.user._id })
+        console.log(dataCart);
+
+        let data = {}
+        if (dataCart) {
+            if (plus) {
+                data = await CartItem.findByIdAndUpdate(dataCart._id, { qty: plus + dataCart.qty }, { new: true })
+            } else {
+                if (dataCart.qty <= 1) {
+                    return res.status(400).json({
+                        error: 1,
+                        message: 'Quantity is not enough'
+                    })
+                }
+                data = await CartItem.findByIdAndUpdate(dataCart._id, { qty: dataCart.qty - min }, { new: true })
             }
-        });
 
-        // await CartItem.deleteMany({ user: req.user._id });
-        await CartItem.bulkWrite(CartItems.map(item => ({
-            updateOne: {
-                filter: { user: req.user._id, product: item.product },
-                update: { $set: item },
-                upsert: true
-            }
-        })));
-
-
-        return res.json(CartItems)
+        } else {
+            data = await CartItem.create({ qty: plus, product: product_id, user: req.user._id })
+        }
+        return res.json(data)
     } catch (err) {
         if (err && err.name === 'ValidationError') {
             return res.status(400).json({

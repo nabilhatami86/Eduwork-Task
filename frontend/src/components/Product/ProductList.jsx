@@ -10,6 +10,7 @@ const ProductList = ({ searchTerm }) => {
   const [tags, setTags] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTags, setSelectedTags] = useState("all");
+  // const token = localStorage.getItem("token");
 
   useEffect(() => {
     axios
@@ -72,8 +73,6 @@ const ProductList = ({ searchTerm }) => {
 
   return (
     <div className="container flex mt-4 ">
-      <h3 className="text-center">Daftar Product</h3>
-      {/* Kategori Dropdown */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="dropdown">
           <button
@@ -194,10 +193,10 @@ const ProductList = ({ searchTerm }) => {
       {/* Produk */}
       <div className="row g-3 justify-content-start">
         {filteredProducts.length > 0 ? (
-          filteredProducts.map((product, index) => {
+          filteredProducts.map((product) => {
             return (
-              <div className="col-md-3 col-sm-6" key={index}>
-                <ProductCard product={product} tags={tags} />
+              <div className="col-md-3 col-sm-6" key={product._id}>
+                <ProductCard product={product} />
               </div>
             );
           })

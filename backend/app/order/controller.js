@@ -1,52 +1,70 @@
-const { Types } = require("mongoose");
 const Order = require("./model");
 const OrderItem = require("./order-item/model");
 const DeliveryAddress = require("../deliveryAddress/model");
 const CartItem = require("../cart/cart-item/model");
+const Product = require("../product/model");
 
 const createOrder = async (req, res, next) => {
     try {
-        let { delivery_address, delivery_fee } = req.body;
-        let items = await CartItem.find({ user: req.user._id }).populate('product');
-        if (!items) {
-            return res.json({
-                error: 1,
-                message: 'You cannot create order because you have no items in cart',
-            });
-        }
+        const { delivery_address, delivery_fee, items } = req.body;
 
-        let address = await DeliveryAddress.findById(delivery_address);
-        let order = new Order({
-            _id: new Types.ObjectId(),
-            status: 'waiting_payment',
+        const validationAddress = await DeliveryAddress.findOne({ _id: delivery_address })
+        if (!validationAddress) {
+            return res.status(400).json({ message: "Delivery address not found" });
+        };
+
+        const newOrder = await Order.create({
+            delivery_address: delivery_address,
             delivery_fee: delivery_fee,
-            delivery_address: {
-                name: address.name,
-                provinsi: address.provinsi,
-                kabupaten: address.kabupaten,
-                kecamatan: address.kecamatan,
-                kelurahan: address.kelurahan,
-                detail: address.detail,
-            },
-            user: req.user._id,
+            status: 'waiting_payment',
+            user: req.user._id
         });
 
-        let orderItems = await OrderItem.insertMany(
-            items.map((item) => ({
-                ...item,
-                name: item.product.name,
-                qty: parseInt(item.qty),
-                price: parseInt(item.product.price),
-                order: order._id,
-                product: item.product._id,
-            }))
-        );
-        orderItems.forEach((item) => order.order_items.push(item));
-        await order.save();
-        // Hapus semua item di keranjang pengguna
-        await CartItem.deleteMany({ user: req.user._id });
-        console.log("Created Order:", order);
-        return res.json(order);
+        if (items.lenght = 0) {
+            return res.status(400).json({ message: "Cart is empty" });
+        }
+
+        let data = 0
+        let total = 0
+
+        for (let item of items) {
+            if (item.cart) {
+                await CartItem.deleteOne({ _id: item.cart });
+            }
+
+            const validationProduct = await Product.findOne({ _id: item.product })
+            if (!validationProduct) {
+                return res.status(400).json({ message: "Product not found" });
+            };
+
+            const subtotal = item.qty * validationProduct.price
+            const ongkir = newOrder.delivery_fee
+            data += subtotal + ongkir
+
+            total += data
+
+            await OrderItem.create({
+                order: newOrder._id,
+                product: item.product,
+                qty: item.qty,
+                price: data
+            })
+        }
+
+        await Order.updateOne({ _id: newOrder._id }, { total })
+
+        res.status(201).json({
+            message: "Order created successfully",
+            order: {
+                id: newOrder._id,
+                delivery_address: newOrder.delivery_address,
+                delivery_fee: newOrder.delivery_fee,
+                status: newOrder.status,
+                total
+            },
+
+        });
+
 
     } catch (err) {
         if (err && err.name === 'ValidationError') {
@@ -62,23 +80,19 @@ const createOrder = async (req, res, next) => {
 
 const getOrder = async (req, res, next) => {
     try {
-        let { skip = 0, limit = 10 } = req.query;
-
-        // Hitung total dokumen (jumlah order)
-        let count = await Order.find({ user: req.user._id }).countDocuments();
-        // Ambil daftar order dengan pagination
-        let orders = await Order
-            .find({ user: req.user._id })
-            .skip(parseInt(skip))
-            .limit(parseInt(limit))
-            .populate('order_items')
-            .sort('-createdAt');
-
-        // Mengembalikan respons JSON
-        return res.json({
-            data: orders.map(order => order.toJSON({ virtuals: true })),
-            count,
-        });
+        const order = await OrderItem.find()
+            .populate("product")
+            .populate({
+                path: "order",
+                populate: {
+                    path: "delivery_address",
+                },
+                populate: {
+                    path: "user",
+                    select: "-password -token"
+                }
+            })
+        return res.json(order)
     } catch (err) {
         if (err && err.name === 'ValidationError') {
             return res.json({
@@ -91,7 +105,37 @@ const getOrder = async (req, res, next) => {
     }
 };
 
+const getOrderById = async (req, res, next) => {
+    try {
+        const order = await OrderItem.findById(req.params.id).populate("product")
+            .populate({
+                path: "order",
+                populate: {
+                    path: "delivery_address",
+                },
+                populate: {
+                    path: "user",
+                    select: "-password -token"
+                }
+            })
+        res.status(201).json({
+            message: "Order retrieved successfully",
+            order: order
+        })
+    } catch (err) {
+        if (err && err.name === 'ValidationError') {
+            return res.json({
+                error: 1,
+                message: err.message,
+                fields: err.errors,
+            });
+        }
+        next(err);
+    }
+}
+
 module.exports = {
     createOrder,
-    getOrder
+    getOrder,
+    getOrderById
 };

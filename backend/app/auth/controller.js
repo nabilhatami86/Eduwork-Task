@@ -1,9 +1,9 @@
-const User = require ('../user/model');
+const User = require('../user/model');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
-const getToken  = require('../../utils/getToken')
+const getToken = require('../../utils/getToken')
 
 
 const register = async (req, res, next) => {
@@ -27,9 +27,9 @@ const register = async (req, res, next) => {
 
 const localStrategy = async (email, password, done) => {
     try {
-        console.log("Incoming email:", email); 
-        let user = await User.findOne({ email }).select('-__v -createdAt -updatedAt -cart_items -token');
-        console.log("User found:", user); 
+
+        const user = await User.findOne({ email }).select('-__v -createdAt -updatedAt -cart_items -token');
+
 
         if (!user) return done(null, false);
 
@@ -41,7 +41,7 @@ const localStrategy = async (email, password, done) => {
             return done(null, false);
         }
     } catch (err) {
-        console.error("Error in localStrategy:", err); 
+        console.error("Error in localStrategy:", err);
         done(err, null);
     }
 };
@@ -50,28 +50,26 @@ const localStrategy = async (email, password, done) => {
 
 
 const login = async (req, res, next) => {
-    passport.authenticate('local', async function(err, user) {
+    passport.authenticate('local', async function (err, user) {
         console.log("Secret Key:", config.secretKey);
-    
+
         if (err) return next(err);
-    
+
         if (!user) {
             return res.json({ error: 1, message: 'Email or Password Incorrect' });
         }
-    
+
         let signed = jwt.sign(user, config.secretKey);
-        
-    
+
         await User.findByIdAndUpdate(user._id, { $push: { token: signed } });
-    
-        console.log("Login successful:", { user, token: signed });
+
         res.json({
             message: 'Login Successfully',
             user,
             token: signed
         });
     })(req, res, next);
-    
+
 };
 
 const logout = (req, res, next) => {
@@ -102,9 +100,6 @@ const me = (req, res, next) => {
     if (!req.user) {
         return res.json({ error: 1, message: 'You are not logged in or token expired' });
     }
-
-    console.log("User data:", req.user);
-
     res.json(req.user);
 };
 

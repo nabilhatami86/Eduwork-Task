@@ -14,7 +14,7 @@ const CartItem = ({
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={() => onSelect(item.product._id)}
+          onChange={() => onSelect(item.product._id, item.qty)}
         />
       </td>
       <td>
@@ -28,7 +28,7 @@ const CartItem = ({
           <span>{item.product.name}</span>
         </div>
       </td>
-      <td>Rp {item.price?.toLocaleString("id-ID")}</td>
+      <td>Rp {item.product.price?.toLocaleString("id-ID")}</td>
       <td className="d-flex">
         <button
           className="btn btn-secondary btn-sm"

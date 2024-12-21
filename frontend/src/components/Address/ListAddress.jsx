@@ -21,17 +21,17 @@ const AddressList = ({ addresses, handleEditAddress, handleDeleteAddress }) => {
               </p>
               <p className="mb-1 text-muted">{address.detail}</p>
             </div>
-            <div>
+            <div class="d-flex justify-content-start flex-wrap gap-2">
               <button
                 type="button"
-                className="btn btn-warning btn-sm me-2"
+                class="btn btn-warning btn-sm"
                 onClick={() => handleEditAddress(address)}
               >
                 Edit
               </button>
               <button
                 type="button"
-                className="btn btn-danger btn-sm"
+                class="btn btn-danger btn-sm"
                 onClick={() => handleDeleteAddress(address._id)}
               >
                 Delete
