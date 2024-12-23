@@ -55,15 +55,15 @@ const Footer = () => {
               </li>
               <li className="nav-item mb-2">
                 <a
-                  href="/features"
+                  href="/history"
                   className="nav-link p-0 text-light hover-text-success"
                 >
-                  Features
+                  History
                 </a>
               </li>
               <li className="nav-item mb-2">
                 <a
-                  href="/pricing"
+                  href="/"
                   className="nav-link p-0 text-light hover-text-success"
                 >
                   Pricing
@@ -71,7 +71,7 @@ const Footer = () => {
               </li>
               <li className="nav-item mb-2">
                 <a
-                  href="/about"
+                  href="/"
                   className="nav-link p-0 text-light hover-text-success"
                 >
                   About Us

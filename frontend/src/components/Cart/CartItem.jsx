@@ -18,7 +18,7 @@ const CartItem = ({
         />
       </td>
       <td>
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center justify-content-start">
           <img
             src={item.product.image_url}
             alt={item.product.name}
@@ -29,20 +29,22 @@ const CartItem = ({
         </div>
       </td>
       <td>Rp {item.product.price?.toLocaleString("id-ID")}</td>
-      <td className="d-flex">
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={() => onDecrement(item.product._id, item.qty)}
-        >
-          -
-        </button>
-        <span className="mx-2">{item.qty}</span>
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={() => onIncrement(item.product._id, item.qty)}
-        >
-          +
-        </button>
+      <td>
+        <div className="d-flex justify-content-center align-items-center">
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => onDecrement(item.product._id, item.qty)}
+          >
+            -
+          </button>
+          <span className="mx-2">{item.qty}</span>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => onIncrement(item.product._id, item.qty)}
+          >
+            +
+          </button>
+        </div>
       </td>
       <td>
         <button

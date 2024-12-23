@@ -1,3 +1,4 @@
+/* Navbar */
 .navbar {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     height: 80px;
@@ -16,6 +17,37 @@
 
 .navbar-brand-img:hover {
     transform: scale(1.05);
+}
+
+/* Breadcrumb */
+.breadcrumb-container {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+.breadcrumb {
+    background: transparent;
+    margin-bottom: 0;
+    padding: 10px 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.breadcrumb a {
+    text-decoration: none;
+    color: #28a745;
+    font-weight: bold;
+    transition: color 0.3s ease-in-out;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+    color: #218838;
+}
+
+.breadcrumb .active {
+    color: #6c757d;
+    font-weight: normal;
 }
 
 /* Search Bar */
@@ -102,6 +134,10 @@ button.btn-success:hover {
 
     .navbar-brand-img {
         max-width: 100px;
+    }
+
+    .breadcrumb-container {
+        padding-left: 0;
     }
 
     .form-control {

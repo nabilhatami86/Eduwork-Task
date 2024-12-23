@@ -6,6 +6,7 @@ import { MdOutgoingMail } from "react-icons/md";
 import { RiLockPasswordFill } from "react-icons/ri";
 import { MdDriveFileRenameOutline } from "react-icons/md";
 import pageLogin from "../../assets/login.jpg";
+import "./Register.css";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -155,36 +156,6 @@ const Register = () => {
           <Toast.Body>Registrasi berhasil! Selamat bergabung 🎊</Toast.Body>
         </Toast>
       </ToastContainer>
-
-      <style>
-        {`
-          .toast-success .toast-header {
-            background: linear-gradient(90deg, #28a745, #1e7e34);
-            color: white;
-          }
-          .toast-success .toast-body {
-            background: #d4edda;
-            border-radius: 5px;
-            color: #155724;
-            font-size: 1rem;
-            font-weight: bold;
-            text-align: center;
-          }
-          @keyframes slide-in {
-            from {
-              transform: translateY(-100%);
-              opacity: 0;
-            }
-            to {
-              transform: translateY(0);
-              opacity: 1;
-            }
-          }
-          .toast-success {
-            animation: slide-in 0.5s ease-in-out;
-          }
-        `}
-      </style>
     </div>
   );
 };

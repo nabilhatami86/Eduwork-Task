@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { Navbar, Container, Badge } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import LogoComponent from "./Logo";
 import SearchBarComponent from "./SearchBar";
 import UserProfileComponent from "./UserProfile";
@@ -14,6 +14,7 @@ const NavbarComponent = ({ onSearchChange }) => {
   const [userData, setUserData] = useState({ full_name: "", email: "" });
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const cartItems = useSelector((state) => state.cart.items);
   const cartItemCount = cartItems ? cartItems.length : 0;
@@ -46,12 +47,52 @@ const NavbarComponent = ({ onSearchChange }) => {
     }
   }, [token, handleLogout]);
 
+  const getBreadcrumbName = () => {
+    switch (location.pathname) {
+      case "/product":
+        return "Product";
+      case "/order":
+        return "Order";
+      case "/address":
+        return "Address";
+      case "/login":
+        return "Login ";
+      case "/register":
+        return "Register ";
+      case "/invoice":
+        return "Invoice";
+      case "/history":
+        return "Invoice History";
+      case "/cart":
+        return "Cart";
+      default:
+        return "Promotions";
+    }
+  };
+
   return (
     <div className="flex">
       <Navbar bg="light" expand="lg" className="shadow-sm">
         <Container>
+          {/* Logo */}
           <LogoComponent />
+
+          {/* Breadcrumb */}
+          <nav aria-label="breadcrumb" className="breadcrumb-container">
+            <ol className="breadcrumb mb-0 me-2">
+              <li className="breadcrumb-item">
+                <Link to="/">Home</Link>
+              </li>
+              <li className="breadcrumb-item active" aria-current="page">
+                {getBreadcrumbName()}
+              </li>
+            </ol>
+          </nav>
+
+          {/* Search Bar */}
           <SearchBarComponent onSearchChange={handleSearch} />
+
+          {/* User Profile / Auth Buttons */}
           <div className="d-flex align-items-center">
             {token ? (
               <>

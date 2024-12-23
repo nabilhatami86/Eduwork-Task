@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, Toast } from "react-bootstrap";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import "./Login.css";
 
 const Login = () => {
   const [error, setError] = useState("");
@@ -38,7 +39,7 @@ const Login = () => {
         localStorage.setItem("userId", result.data.user._id);
         setShowSuccess(true);
         setTimeout(() => {
-          navigate("/product");
+          navigate("/");
         }, 2000);
       })
       .catch((err) => {
@@ -48,14 +49,8 @@ const Login = () => {
   };
 
   return (
-    <div
-      className="d-flex justify-content-center align-items-center"
-      style={{ backgroundColor: "#008000", height: "100vh" }}
-    >
-      <div
-        className="card shadow-lg p-4"
-        style={{ maxWidth: "400px", width: "100%" }}
-      >
+    <div className="d-flex justify-content-center align-items-center login-page">
+      <div className="card shadow-lg p-4">
         <h1 className="text-center mb-4">LOGIN</h1>
         <label className="form-label">
           <input
@@ -116,63 +111,6 @@ const Login = () => {
           <Toast.Body>{error}</Toast.Body>
         </Toast>
       </ToastContainer>
-
-      <style>
-        {`
-          /* Success Toast */
-          .toast-success .toast-header {
-            background: linear-gradient(90deg, #28a745, #1e7e34);
-            color: white;
-          }
-          .toast-success .toast-body {
-            background: #d4edda;
-            border-radius: 5px;
-            color: #155724;
-            font-size: 1rem;
-            font-weight: bold;
-            text-align: center;
-          }
-          .toast-success {
-            animation: slide-in 0.5s ease-in-out;
-          }
-
-          /* Error Toast */
-          .toast-error .toast-header {
-            background: linear-gradient(90deg, #dc3545, #c82333);
-            color: white;
-          }
-          .toast-error .toast-body {
-            background: #f8d7da;
-            border-radius: 5px;
-            color: #721c24;
-            font-size: 1rem;
-            font-weight: bold;
-            text-align: center;
-          }
-          .toast-error {
-            animation: shake 0.5s ease-in-out;
-          }
-
-          /* Animations */
-          @keyframes slide-in {
-            from {
-              transform: translateY(-100%);
-              opacity: 0;
-            }
-            to {
-              transform: translateY(0);
-              opacity: 1;
-            }
-          }
-          @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-            75% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
-          }
-        `}
-      </style>
     </div>
   );
 };

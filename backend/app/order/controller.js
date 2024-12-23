@@ -3,6 +3,7 @@ const OrderItem = require("./order-item/model");
 const DeliveryAddress = require("../deliveryAddress/model");
 const CartItem = require("../cart/cart-item/model");
 const Product = require("../product/model");
+const Invoice = require("../invoice/model");
 
 const createOrder = async (req, res, next) => {
     try {
@@ -53,7 +54,17 @@ const createOrder = async (req, res, next) => {
 
         await Order.updateOne({ _id: newOrder._id }, { total })
 
-        res.status(201).json({
+        const newInvoice = await Invoice.create({
+            order: newOrder._id,
+            status: 'waiting_payment',
+            total: total,
+            delivery_fee: newOrder.delivery_fee,
+            user: req.user._id,
+            delivery_address: newOrder.delivery_address
+        })
+
+
+        res.status(200).json({
             message: "Order created successfully",
             order: {
                 id: newOrder._id,
@@ -62,6 +73,7 @@ const createOrder = async (req, res, next) => {
                 status: newOrder.status,
                 total
             },
+            newInvoice
 
         });
 
@@ -107,7 +119,9 @@ const getOrder = async (req, res, next) => {
 
 const getOrderById = async (req, res, next) => {
     try {
-        const order = await OrderItem.findById(req.params.id).populate("product")
+        const id = req.params.id;
+        console.log(id)
+        const order = await OrderItem.findById(id).populate("product")
             .populate({
                 path: "order",
                 populate: {

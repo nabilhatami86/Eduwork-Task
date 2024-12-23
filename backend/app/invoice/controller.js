@@ -20,20 +20,12 @@ const createInvoice = async (req, res, next) => {
         validationOrder.status = 'success'
         validationOrder.save()
 
-        const generatedInvoice = () => {
-            const date = new Date();
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const day = String(date.getDate()).padStart(2, "0");
-            const randomDigits = Math.floor(1000 + Math.random() * 9000);
-            return `INV-${year}${month}${day}-${randomDigits}`;
-        }
 
         const invoice = new Invoice({
-            order,
             amount,
-            user: req.user._id,
-            invoiceNumber: generatedInvoice(),
+            order,
+            status: 'success',
+            user: req.user._id
         });
 
         await invoice.save();

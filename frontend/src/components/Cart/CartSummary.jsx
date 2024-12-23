@@ -1,12 +1,9 @@
 const CartSummary = ({
   items,
   calculateSubtotal,
-  isCheckoutEnabled,
   selectedItems,
   handleProceedToOrder,
 }) => {
-  console.log("select", selectedItems);
-
   return (
     <div className="card">
       <div className="card-header">
@@ -22,8 +19,6 @@ const CartSummary = ({
           </thead>
           <tbody>
             {selectedItems.map((item, index) => {
-              console.log("itemselc", item);
-
               return (
                 <tr key={item.product._id || index}>
                   <td>

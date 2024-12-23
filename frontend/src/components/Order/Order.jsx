@@ -13,7 +13,7 @@ const Order = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const navigate = useNavigate();
-  const { product, buyProduct } = useSelector((state) => state.cart); // Mengambil buyProduct dari Redux
+  const { product, buyProduct } = useSelector((state) => state.cart);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -44,6 +44,7 @@ const Order = () => {
     try {
       let data = [];
 
+      // Menyiapkan data produk yang akan dibeli
       if (product.length > 0) {
         product.forEach((item) => {
           data.push({
@@ -60,6 +61,7 @@ const Order = () => {
         });
       }
 
+      // Payload untuk membuat pesanan
       const payload = {
         items: data,
         delivery_fee: selectedCourier.delivery_fee,
@@ -74,7 +76,7 @@ const Order = () => {
         }
       );
 
-      const order = response.data.order; // Ambil objek `order` dari respons
+      const order = response.data.order;
       console.log("Order Response:", order);
 
       if (!order || !order.id) {
@@ -85,16 +87,25 @@ const Order = () => {
       const totalHarga = calculateTotalBelanja();
 
       let userAmount;
+      let isPaymentCanceled = false;
+
+      // Proses pembayaran
       while (true) {
-        // Minta pengguna memasukkan jumlah pembayaran
+        // Minta pengguna memasukkan jumlah pembayaran atau membatalkan
         const input = prompt(
           `Masukkan jumlah pembayaran untuk Order ID: ${
             order.id
-          } \nTotal Harga: Rp${totalHarga.toLocaleString()}`,
+          } \nTotal Harga: Rp${totalHarga.toLocaleString()} \nAtau ketik 'batal' untuk membatalkan pembayaran.`,
           ""
         );
 
-        // Validasi input sebagai angka
+        // Jika pengguna memilih untuk membatalkan
+        if (input.toLowerCase() === "batal") {
+          isPaymentCanceled = true;
+          break;
+        }
+
+        // Validasi input sebagai angka dan pastikan sesuai total harga
         if (input && !isNaN(input) && parseFloat(input) === totalHarga) {
           userAmount = parseFloat(input);
           break;
@@ -103,6 +114,15 @@ const Order = () => {
         alert(
           `Jumlah pembayaran tidak valid. Pastikan sesuai dengan total harga: Rp${totalHarga.toLocaleString()}.`
         );
+      }
+
+      // Jika pembayaran dibatalkan, tidak perlu lanjut ke invoice
+      if (isPaymentCanceled) {
+        alert(`Pembayaran untuk Order ID: ${order.id} dibatalkan.`);
+        setModalMessage("Pembayaran dibatalkan, pesanan tidak diproses.");
+        setShowModal(true);
+        window.location.href = `/invoice/${order.id}`;
+        return; // Menghentikan eksekusi lebih lanjut
       }
 
       // Kirim data pembayaran ke server
@@ -122,7 +142,9 @@ const Order = () => {
       console.log("Payment Response:", paymentResponse.data);
 
       alert(
-        `Pembayaran berhasil! \nOrder ID: ${order} \nAmount: Rp${userAmount.toLocaleString()}`
+        `Pembayaran berhasil! \nOrder ID: ${
+          order.id
+        } \nAmount: Rp${userAmount.toLocaleString()}`
       );
 
       setModalMessage("Pesanan dan pembayaran berhasil diproses.");
@@ -257,7 +279,7 @@ const Order = () => {
               </div>
 
               {/* Courier Dropdown */}
-              <Dropdown className="mt-3">
+              <Dropdown className="d-flex justify-content-end mt-3">
                 <Dropdown.Toggle variant="info" id="dropdown-kurir">
                   {selectedCourier
                     ? `${selectedCourier.name} - Rp${selectedCourier.delivery_fee}`

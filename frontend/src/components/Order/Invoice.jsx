@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col, Card, Button, Table } from "react-bootstrap";
-import { FaFileInvoiceDollar, FaTruck } from "react-icons/fa";
+import {
+  FaFileInvoiceDollar,
+  FaTruck,
+  FaHome,
+  FaUserCircle,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
 import "./css/Invoice.css";
 
 const Invoice = () => {
+  const navigate = useNavigate();
   const { order_id } = useParams();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,14 +47,13 @@ const Invoice = () => {
   }, [order_id, token]);
 
   const generateInvoiceNumber = () => {
-    if (!invoice.invoice || !invoice.invoice._id) return null; // Cek apakah invoice sudah ada dan memiliki ID
     const date = new Date();
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const randomNumber = Math.floor(Math.random() * 10000);
+    const randomNumber = Math.floor(Math.random() * 90000000000);
 
     // Menggunakan invoice._id untuk ID invoice
-    return `INV/${year}/${month}/${randomNumber}/${invoice.invoice._id}`;
+    return `INV/${year}/${month}/${randomNumber}`;
   };
 
   const invoiceNumber = generateInvoiceNumber();
@@ -72,7 +78,7 @@ const Invoice = () => {
   return (
     <Container className="mt-5">
       <Card className="shadow-lg border-0">
-        <Card.Header className="bg-light text-center py-4">
+        <Card.Header className="text-center py-4">
           <h4 className="mb-0">
             <FaFileInvoiceDollar /> Invoice
           </h4>
@@ -82,13 +88,16 @@ const Invoice = () => {
             <Col md={6}>
               <h5>Pembeli:</h5>
               <p>
+                <FaUserCircle />{" "}
                 {invoice.invoice.user.full_name ||
                   "Nama pembeli tidak tersedia"}
               </p>
             </Col>
             <Col md={6}>
               <h5>Status Pembayaran:</h5>
-              <p>{invoice.invoice.order.status}</p>
+              <p className="d-flex align-items-center  text-uppercase">
+                <span>{invoice.invoice.order.status}</span>
+              </p>
             </Col>
           </Row>
 
@@ -107,13 +116,18 @@ const Invoice = () => {
             <Col md={12}>
               <h5>Alamat Pengiriman:</h5>
               <p>
-                {invoice.invoice.order.delivery_address
-                  ? ` ${invoice.invoice.order.delivery_address.detail},
-                  ${invoice.invoice.order.delivery_address.kelurahan},
-                  ${invoice.invoice.order.delivery_address.kecamatan}, 
-                  ${invoice.invoice.order.delivery_address.kabupaten}, 
-                  ${invoice.invoice.order.delivery_address.provinsi}`
-                  : "Alamat pengiriman tidak tersedia"}
+                {invoice.invoice.order.delivery_address ? (
+                  <>
+                    <FaMapMarkerAlt className=" me-2" />
+                    {`${invoice.invoice.order.delivery_address.detail},
+              ${invoice.invoice.order.delivery_address.kelurahan},
+              ${invoice.invoice.order.delivery_address.kecamatan},
+              ${invoice.invoice.order.delivery_address.kabupaten},
+              ${invoice.invoice.order.delivery_address.provinsi}`}
+                  </>
+                ) : (
+                  "Alamat pengiriman tidak tersedia"
+                )}
               </p>
             </Col>
           </Row>
@@ -145,7 +159,9 @@ const Invoice = () => {
                   <strong>Total Harga:</strong>
                 </td>
                 <td>
-                  <strong>Rp{invoice.invoice.orderItems} </strong>
+                  <strong>
+                    Rp {invoice.orderItems.map((item) => item.product.price)}{" "}
+                  </strong>
                 </td>
               </tr>
               <tr>
@@ -153,7 +169,9 @@ const Invoice = () => {
                   <strong>Ongkir:</strong>
                 </td>
                 <td>
-                  <strong>Rp{invoice.invoice.order.delivery_fee}</strong>
+                  <strong>
+                    Rp{invoice.invoice.order.delivery_fee.toLocaleString()}
+                  </strong>
                 </td>
               </tr>
               <tr>
@@ -161,16 +179,23 @@ const Invoice = () => {
                   <strong>Total:</strong>
                 </td>
                 <td>
-                  <strong>Rp {invoice.invoice.order.total}</strong>
+                  <strong>
+                    Rp {invoice.invoice.order.total.toLocaleString()}
+                  </strong>
                 </td>
               </tr>
             </tbody>
           </Table>
 
           <Row className="mt-3">
-            <Col className="text-center">
-              <Button variant="secondary" onClick={() => window.print()}>
+            <Col className="text-start">
+              <Button variant="warning" onClick={() => window.print()}>
                 <FaTruck /> Cetak Invoice
+              </Button>
+            </Col>
+            <Col className="text-end">
+              <Button variant="success" onClick={() => navigate("/")}>
+                <FaHome /> Back
               </Button>
             </Col>
           </Row>

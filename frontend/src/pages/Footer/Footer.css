@@ -70,7 +70,7 @@ footer .social-media svg {
 }
 
 footer .social-media a:hover svg {
-  transform: scale(1.1); /* Slightly enlarge icon on hover */
+  transform: scale(1.1); 
 }
 
 /* Responsive Design for Mobile */
